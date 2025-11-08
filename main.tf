@@ -10,9 +10,9 @@ provider "aws" {
 # Variables are defined in variables.tf
 
 # Data sources
-data "aws_availability_zones" "available" {
-  state = "available"
-}
+# data "aws_availability_zones" "available" {
+#   state = "available"
+# }
 
 data "aws_ami" "amazon_linux" {
   most_recent = true

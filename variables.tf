@@ -100,23 +100,6 @@ variable "public_subnet_id" {
   }
 }
 
-variable "private_subnet_ids" {
-  description = "List of existing private subnet IDs for RDS (minimum 2 subnets in different AZs)"
-  type        = list(string)
-  
-  validation {
-    condition = length(var.private_subnet_ids) >= 2
-    error_message = "At least 2 private subnet IDs are required for RDS subnet group."
-  }
-  
-  validation {
-    condition = alltrue([
-      for subnet_id in var.private_subnet_ids : can(regex("^subnet-[a-z0-9]+$", subnet_id))
-    ])
-    error_message = "All subnet IDs must be valid subnet identifiers starting with 'subnet-'."
-  }
-}
-
 variable "public_subnet_ids" {
   description = "List of existing public subnet IDs for RDS when publicly accessible (minimum 2 subnets in different AZs)"
   type        = list(string)
