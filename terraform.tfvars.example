@@ -7,6 +7,15 @@ aws_region = "us-east-1"
 # Project Configuration
 project_name = "wordpress-demo"
 
+# Existing Network Resources
+# Replace these with your actual VPC and subnet IDs
+vpc_id            = "vpc-0123456789abcdef0"
+public_subnet_id  = "subnet-0123456789abcdef0"
+private_subnet_ids = [
+  "subnet-0123456789abcdef1",
+  "subnet-0123456789abcdef2"
+]
+
 # EC2 Configuration
 instance_type = "t3.micro"
 

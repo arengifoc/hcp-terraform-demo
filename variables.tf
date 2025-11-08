@@ -79,3 +79,40 @@ variable "backup_retention_period" {
     error_message = "Backup retention period must be between 0 and 35 days."
   }
 }
+
+variable "vpc_id" {
+  description = "ID of the existing VPC to use for resources"
+  type        = string
+  
+  validation {
+    condition = can(regex("^vpc-[a-z0-9]+$", var.vpc_id))
+    error_message = "VPC ID must be a valid VPC identifier starting with 'vpc-'."
+  }
+}
+
+variable "public_subnet_id" {
+  description = "ID of the existing public subnet where EC2 instance will be placed"
+  type        = string
+  
+  validation {
+    condition = can(regex("^subnet-[a-z0-9]+$", var.public_subnet_id))
+    error_message = "Subnet ID must be a valid subnet identifier starting with 'subnet-'."
+  }
+}
+
+variable "private_subnet_ids" {
+  description = "List of existing private subnet IDs for RDS (minimum 2 subnets in different AZs)"
+  type        = list(string)
+  
+  validation {
+    condition = length(var.private_subnet_ids) >= 2
+    error_message = "At least 2 private subnet IDs are required for RDS subnet group."
+  }
+  
+  validation {
+    condition = alltrue([
+      for subnet_id in var.private_subnet_ids : can(regex("^subnet-[a-z0-9]+$", subnet_id))
+    ])
+    error_message = "All subnet IDs must be valid subnet identifiers starting with 'subnet-'."
+  }
+}

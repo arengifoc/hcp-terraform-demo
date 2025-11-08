@@ -24,84 +24,10 @@ data "aws_ami" "amazon_linux" {
   }
 }
 
-# VPC
-resource "aws_vpc" "main" {
-  cidr_block           = "10.0.0.0/16"
-  enable_dns_hostnames = true
-  enable_dns_support   = true
-
-  tags = {
-    Name = "${var.project_name}-vpc"
-  }
-}
-
-# Internet Gateway
-resource "aws_internet_gateway" "main" {
-  vpc_id = aws_vpc.main.id
-
-  tags = {
-    Name = "${var.project_name}-igw"
-  }
-}
-
-# Public Subnet
-resource "aws_subnet" "public" {
-  vpc_id                  = aws_vpc.main.id
-  cidr_block              = "10.0.1.0/24"
-  availability_zone       = data.aws_availability_zones.available.names[0]
-  map_public_ip_on_launch = true
-
-  tags = {
-    Name = "${var.project_name}-public-subnet"
-  }
-}
-
-# Private Subnet 1
-resource "aws_subnet" "private1" {
-  vpc_id            = aws_vpc.main.id
-  cidr_block        = "10.0.2.0/24"
-  availability_zone = data.aws_availability_zones.available.names[0]
-
-  tags = {
-    Name = "${var.project_name}-private-subnet-1"
-  }
-}
-
-# Private Subnet 2 (required for RDS subnet group)
-resource "aws_subnet" "private2" {
-  vpc_id            = aws_vpc.main.id
-  cidr_block        = "10.0.3.0/24"
-  availability_zone = data.aws_availability_zones.available.names[1]
-
-  tags = {
-    Name = "${var.project_name}-private-subnet-2"
-  }
-}
-
-# Route Table for Public Subnet
-resource "aws_route_table" "public" {
-  vpc_id = aws_vpc.main.id
-
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.main.id
-  }
-
-  tags = {
-    Name = "${var.project_name}-public-rt"
-  }
-}
-
-# Route Table Association for Public Subnet
-resource "aws_route_table_association" "public" {
-  subnet_id      = aws_subnet.public.id
-  route_table_id = aws_route_table.public.id
-}
-
 # Security Group for Web Server
 resource "aws_security_group" "web" {
   name_prefix = "${var.project_name}-web-"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = var.vpc_id
 
   # HTTP/HTTPS access
   ingress {
@@ -142,7 +68,7 @@ resource "aws_security_group" "web" {
 # Security Group for RDS
 resource "aws_security_group" "rds" {
   name_prefix = "${var.project_name}-rds-"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = var.vpc_id
 
   # MySQL access from web server
   ingress {
@@ -160,7 +86,7 @@ resource "aws_security_group" "rds" {
 # RDS Subnet Group
 resource "aws_db_subnet_group" "main" {
   name       = "${var.project_name}-db-subnet-group"
-  subnet_ids = [aws_subnet.private1.id, aws_subnet.private2.id]
+  subnet_ids = var.private_subnet_ids
 
   tags = {
     Name = "${var.project_name}-db-subnet-group"
@@ -256,7 +182,7 @@ EOF
 resource "aws_instance" "wordpress" {
   ami                    = data.aws_ami.amazon_linux.id
   instance_type         = var.instance_type
-  subnet_id             = aws_subnet.public.id
+  subnet_id             = var.public_subnet_id
   vpc_security_group_ids = [aws_security_group.web.id]
 
   user_data = local.user_data
