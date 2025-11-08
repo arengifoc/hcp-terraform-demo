@@ -1,20 +1,22 @@
 # WordPress Demo on AWS with HCP Terraform
 
-Este módulo de Terraform despliega una infraestructura básica en AWS para ejecutar WordPress, ideal para demostraciones de HCP Terraform.
+Este módulo de Terraform despliega una infraestructura básica en AWS para ejecutar WordPress, utilizando recursos de red existentes.
 
 ## Recursos creados
 
-- **VPC** con subnets públicas y privadas
 - **Instancia EC2** (Amazon Linux 2) con WordPress preinstalado
 - **Base de datos RDS MySQL** para WordPress
 - **Security Groups** configurados apropiadamente
-- **Internet Gateway** y tablas de rutas
 
 ## Prerrequisitos
 
 1. AWS CLI configurado con credenciales válidas
 2. Terraform >= 1.0 instalado
-3. Cuenta de HCP Terraform (opcional, pero recomendado)
+3. **VPC existente** con:
+   - Al menos una subnet pública (para EC2)
+   - Al menos dos subnets privadas en diferentes AZs (para RDS)
+   - Internet Gateway configurado en la subnet pública
+4. Cuenta de HCP Terraform (opcional, pero recomendado)
 
 ## Uso
 
@@ -29,6 +31,15 @@ Este módulo de Terraform despliega una infraestructura básica en AWS para ejec
    ```hcl
    aws_region = "us-east-1"
    project_name = "mi-wordpress-demo"
+   
+   # IDs de tus recursos de red existentes
+   vpc_id = "vpc-0123456789abcdef0"
+   public_subnet_id = "subnet-0123456789abcdef0"
+   private_subnet_ids = [
+     "subnet-0123456789abcdef1",
+     "subnet-0123456789abcdef2"
+   ]
+   
    db_password = "tu-password-seguro"
    ```
 4. Ejecuta Terraform:
@@ -48,6 +59,9 @@ Este módulo de Terraform despliega una infraestructura básica en AWS para ejec
 4. Configura las variables de Terraform:
    - `aws_region`
    - `project_name` 
+   - `vpc_id`
+   - `public_subnet_id`
+   - `private_subnet_ids`
    - `db_password` (marca como sensible)
 5. Ejecuta el plan desde HCP Terraform
 
@@ -65,6 +79,9 @@ Una vez completado el despliegue:
 |----------|-------------|------|-------------------|
 | `aws_region` | Región de AWS | string | `us-east-1` |
 | `project_name` | Nombre del proyecto para etiquetas | string | `wordpress-demo` |
+| `vpc_id` | ID de la VPC existente | string | - |
+| `public_subnet_id` | ID de la subnet pública existente | string | - |
+| `private_subnet_ids` | Lista de IDs de subnets privadas (mínimo 2) | list(string) | - |
 | `instance_type` | Tipo de instancia EC2 | string | `t3.micro` |
 | `db_instance_class` | Clase de instancia RDS | string | `db.t3.micro` |
 | `db_password` | Contraseña de la base de datos | string | - |
@@ -75,7 +92,8 @@ Una vez completado el despliegue:
 - `wordpress_public_ip`: IP pública del servidor
 - `database_endpoint`: Endpoint de la base de datos (sensible)
 - `database_name`: Nombre de la base de datos
-- `vpc_id`: ID de la VPC creada
+- `security_group_web_id`: ID del security group web
+- `security_group_rds_id`: ID del security group RDS
 
 ## Costos estimados
 
