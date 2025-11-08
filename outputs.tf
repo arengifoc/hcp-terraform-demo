@@ -61,6 +61,11 @@ output "database_public_endpoint" {
   value       = aws_db_instance.wordpress.endpoint
 }
 
+output "key_pair_name" {
+  description = "Name of the key pair used for SSH access"
+  value       = var.key_pair_name
+}
+
 output "deployment_instructions" {
   description = "Instructions for accessing WordPress after deployment"
   value = <<-EOT
@@ -77,10 +82,10 @@ output "deployment_instructions" {
     
     🔧 Admin Access:
     - WordPress Admin: http://${aws_instance.wordpress.public_dns}/wp-admin
-    - SSH Access: ssh -i your-key.pem ec2-user@${aws_instance.wordpress.public_ip}
+    - SSH Access: ssh -i ${var.key_pair_name}.pem ec2-user@${aws_instance.wordpress.public_ip}
     - SSM Session: Use AWS Systems Manager Session Manager
     
-    �️ Database Access:
+    🗄️ Database Access:
     - Host: ${aws_db_instance.wordpress.endpoint}
     - Port: 3306
     - Username: admin

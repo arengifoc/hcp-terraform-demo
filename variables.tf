@@ -116,3 +116,14 @@ variable "public_subnet_ids" {
     error_message = "All subnet IDs must be valid subnet identifiers starting with 'subnet-'."
   }
 }
+
+variable "key_pair_name" {
+  description = "Name of the AWS key pair to use for EC2 instance SSH access"
+  type        = string
+  default     = "kp-arengifo"
+  
+  validation {
+    condition = length(var.key_pair_name) > 0
+    error_message = "Key pair name cannot be empty."
+  }
+}

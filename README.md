@@ -23,31 +23,25 @@ Este módulo de Terraform despliega una infraestructura básica en AWS para ejec
 ### Configuración local
 
 1. Clona este repositorio
-2. Copia el archivo de ejemplo de variables:
-   ```bash
-   cp terraform.tfvars.example terraform.tfvars
-   ```
-3. Edita `terraform.tfvars` con tus valores:
+2. Edita el archivo `terraform.tfvars` con tus valores reales:
    ```hcl
    aws_region = "us-east-1"
    project_name = "mi-wordpress-demo"
    
    # IDs de tus recursos de red existentes
-   vpc_id = "vpc-0123456789abcdef0"
-   public_subnet_id = "subnet-0123456789abcdef0"
-   private_subnet_ids = [
-     "subnet-0123456789abcdef1",
-     "subnet-0123456789abcdef2"
-   ]
+   vpc_id = "vpc-tu-vpc-real"
+   public_subnet_id = "subnet-tu-subnet-publica"
+   
    # Public subnets for RDS (to make it accessible from Internet)
    public_subnet_ids = [
-     "subnet-0123456789abcdef3",
-     "subnet-0123456789abcdef4"
+     "subnet-tu-subnet-publica-1",
+     "subnet-tu-subnet-publica-2"
    ]
    
+   key_pair_name = "tu-keypair"
    db_password = "tu-password-seguro"
    ```
-4. Ejecuta Terraform:
+3. Ejecuta Terraform:
    ```bash
    terraform init
    terraform plan
@@ -90,6 +84,7 @@ Una vez completado el despliegue:
 | `private_subnet_ids` | Lista de IDs de subnets privadas (mínimo 2) | list(string) | - |
 | `public_subnet_ids` | Lista de IDs de subnets públicas para RDS (mínimo 2) | list(string) | - |
 | `instance_type` | Tipo de instancia EC2 | string | `t3.micro` |
+| `key_pair_name` | Nombre del key pair para acceso SSH | string | `kp-arengifo` |
 | `db_instance_class` | Clase de instancia RDS | string | `db.t3.micro` |
 | `db_password` | Contraseña de la base de datos | string | - |
 
@@ -136,10 +131,11 @@ terraform destroy
 
 ## Seguridad
 
-⚠️ **Importante**: Esta configuración es para demostraciones únicamente. Para producción, considera:
+⚠️ **Importante**: Esta configuración permite acceso amplio para demostraciones. Para producción, considera:
 
 - Usar HTTPS con certificados SSL
-- Configurar acceso SSH más restrictivo
+- Restringir acceso SSH a IPs específicas (actualmente permite acceso desde cualquier IP)
+- Restringir acceso a RDS a IPs específicas (actualmente permite acceso desde cualquier IP)
 - Usar sistemas de gestión de secretos para contraseñas
 - Implementar copias de seguridad regulares
 - Configurar monitoring y alertas
