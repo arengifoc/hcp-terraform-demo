@@ -1,4 +1,4 @@
-# Variables for WordPress Demo
+# Variables for HTML Website Demo
 variable "aws_region" {
   description = "AWS region where resources will be created"
   type        = string
@@ -11,7 +11,7 @@ variable "aws_region" {
 }
 
 variable "instance_type" {
-  description = "EC2 instance type for WordPress server"
+  description = "EC2 instance type for web server"
   type        = string
   default     = "t3.micro"
   
@@ -24,21 +24,10 @@ variable "instance_type" {
   }
 }
 
-variable "db_instance_class" {
-  description = "RDS instance class for MySQL database"
-  type        = string
-  default     = "db.t3.micro"
-  
-  validation {
-    condition = can(regex("^db\\.", var.db_instance_class))
-    error_message = "DB instance class must be a valid RDS instance class starting with 'db.'."
-  }
-}
-
 variable "project_name" {
   description = "Name of the project used for resource naming and tagging"
   type        = string
-  default     = "wordpress-demo"
+  default     = "html-demo"
   
   validation {
     condition = can(regex("^[a-z0-9-]+$", var.project_name))
@@ -46,38 +35,10 @@ variable "project_name" {
   }
 }
 
-variable "db_password" {
-  description = "Password for the MySQL database (minimum 8 characters)"
-  type        = string
-  sensitive   = true
-  
-  validation {
-    condition = length(var.db_password) >= 8
-    error_message = "Database password must be at least 8 characters long."
-  }
-}
-
 variable "allowed_cidr_blocks" {
-  description = "CIDR blocks allowed to access the WordPress site"
+  description = "CIDR blocks allowed to access the website"
   type        = list(string)
   default     = ["0.0.0.0/0"]
-}
-
-variable "enable_backup" {
-  description = "Enable automated backups for RDS"
-  type        = bool
-  default     = true
-}
-
-variable "backup_retention_period" {
-  description = "Number of days to retain backups"
-  type        = number
-  default     = 7
-  
-  validation {
-    condition = var.backup_retention_period >= 0 && var.backup_retention_period <= 35
-    error_message = "Backup retention period must be between 0 and 35 days."
-  }
 }
 
 variable "vpc_id" {
@@ -97,23 +58,6 @@ variable "public_subnet_id" {
   validation {
     condition = can(regex("^subnet-[a-z0-9]+$", var.public_subnet_id))
     error_message = "Subnet ID must be a valid subnet identifier starting with 'subnet-'."
-  }
-}
-
-variable "public_subnet_ids" {
-  description = "List of existing public subnet IDs for RDS when publicly accessible (minimum 2 subnets in different AZs)"
-  type        = list(string)
-  
-  validation {
-    condition = length(var.public_subnet_ids) >= 2
-    error_message = "At least 2 public subnet IDs are required for publicly accessible RDS."
-  }
-  
-  validation {
-    condition = alltrue([
-      for subnet_id in var.public_subnet_ids : can(regex("^subnet-[a-z0-9]+$", subnet_id))
-    ])
-    error_message = "All subnet IDs must be valid subnet identifiers starting with 'subnet-'."
   }
 }
 
