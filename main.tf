@@ -82,12 +82,13 @@ resource "aws_security_group" "web" {
     cidr_blocks = var.allowed_cidr_blocks
   }
 
-  # SSH access (restrict in production)
+  # SSH access from any IP
   ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = var.allowed_cidr_blocks
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "SSH access from any IP"
   }
 
   # Outbound internet access
@@ -235,6 +236,7 @@ resource "aws_instance" "wordpress" {
   subnet_id             = var.public_subnet_id
   vpc_security_group_ids = [aws_security_group.web.id]
   iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
+  key_name               = var.key_pair_name
 
   user_data = local.user_data
 
