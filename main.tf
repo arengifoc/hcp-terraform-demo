@@ -10,9 +10,9 @@ provider "aws" {
 # Variables are defined in variables.tf
 
 # Data sources
-data "aws_availability_zones" "available" {
-  state = "available"
-}
+# data "aws_availability_zones" "available" {
+#   state = "available"
+# }
 
 data "aws_ami" "amazon_linux" {
   most_recent = true
@@ -21,6 +21,44 @@ data "aws_ami" "amazon_linux" {
   filter {
     name   = "name"
     values = ["amzn2-ami-hvm-*-x86_64-gp2"]
+  }
+}
+
+# IAM Role for EC2 SSM access
+resource "aws_iam_role" "ec2_ssm_role" {
+  name = "${var.project_name}-ec2-ssm-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Name = "${var.project_name}-ec2-ssm-role"
+  }
+}
+
+# Attach AWS managed policy for SSM
+resource "aws_iam_role_policy_attachment" "ssm_managed_instance" {
+  role       = aws_iam_role.ec2_ssm_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+# Instance Profile for EC2
+resource "aws_iam_instance_profile" "ec2_profile" {
+  name = "${var.project_name}-ec2-profile"
+  role = aws_iam_role.ec2_ssm_role.name
+
+  tags = {
+    Name = "${var.project_name}-ec2-profile"
   }
 }
 
@@ -78,6 +116,15 @@ resource "aws_security_group" "rds" {
     security_groups = [aws_security_group.web.id]
   }
 
+  # MySQL access from Internet (for external tools)
+  ingress {
+    from_port   = 3306
+    to_port     = 3306
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "MySQL access from Internet"
+  }
+
   tags = {
     Name = "${var.project_name}-rds-sg"
   }
@@ -86,7 +133,7 @@ resource "aws_security_group" "rds" {
 # RDS Subnet Group
 resource "aws_db_subnet_group" "main" {
   name       = "${var.project_name}-db-subnet-group"
-  subnet_ids = var.private_subnet_ids
+  subnet_ids = var.public_subnet_ids
 
   tags = {
     Name = "${var.project_name}-db-subnet-group"
@@ -111,6 +158,9 @@ resource "aws_db_instance" "wordpress" {
 
   vpc_security_group_ids = [aws_security_group.rds.id]
   db_subnet_group_name   = aws_db_subnet_group.main.name
+  
+  # Make RDS publicly accessible
+  publicly_accessible = true
 
   backup_retention_period = var.enable_backup ? var.backup_retention_period : 0
   backup_window          = "03:00-04:00"
@@ -184,6 +234,7 @@ resource "aws_instance" "wordpress" {
   instance_type         = var.instance_type
   subnet_id             = var.public_subnet_id
   vpc_security_group_ids = [aws_security_group.web.id]
+  iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
 
   user_data = local.user_data
 

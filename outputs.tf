@@ -46,6 +46,21 @@ output "security_group_rds_id" {
   value       = aws_security_group.rds.id
 }
 
+output "iam_role_arn" {
+  description = "ARN of the IAM role for EC2 SSM access"
+  value       = aws_iam_role.ec2_ssm_role.arn
+}
+
+output "instance_profile_name" {
+  description = "Name of the instance profile"
+  value       = aws_iam_instance_profile.ec2_profile.name
+}
+
+output "database_public_endpoint" {
+  description = "Public endpoint for RDS MySQL database (accessible from Internet)"
+  value       = aws_db_instance.wordpress.endpoint
+}
+
 output "deployment_instructions" {
   description = "Instructions for accessing WordPress after deployment"
   value = <<-EOT
@@ -63,7 +78,18 @@ output "deployment_instructions" {
     🔧 Admin Access:
     - WordPress Admin: http://${aws_instance.wordpress.public_dns}/wp-admin
     - SSH Access: ssh -i your-key.pem ec2-user@${aws_instance.wordpress.public_ip}
+    - SSM Session: Use AWS Systems Manager Session Manager
     
-    💡 Note: If WordPress shows an error, wait a few more minutes for the installation to complete.
+    �️ Database Access:
+    - Host: ${aws_db_instance.wordpress.endpoint}
+    - Port: 3306
+    - Username: admin
+    - Password: [the password you configured]
+    - Database: wordpress
+    
+    �💡 Note: 
+    - If WordPress shows an error, wait a few more minutes for the installation to complete.
+    - RDS is now publicly accessible for external database tools.
+    - EC2 instance has SSM Agent configured for secure access.
   EOT
 }
