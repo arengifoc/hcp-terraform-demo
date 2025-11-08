@@ -39,6 +39,11 @@ Este módulo de Terraform despliega una infraestructura básica en AWS para ejec
      "subnet-0123456789abcdef1",
      "subnet-0123456789abcdef2"
    ]
+   # Public subnets for RDS (to make it accessible from Internet)
+   public_subnet_ids = [
+     "subnet-0123456789abcdef3",
+     "subnet-0123456789abcdef4"
+   ]
    
    db_password = "tu-password-seguro"
    ```
@@ -62,6 +67,7 @@ Este módulo de Terraform despliega una infraestructura básica en AWS para ejec
    - `vpc_id`
    - `public_subnet_id`
    - `private_subnet_ids`
+   - `public_subnet_ids`
    - `db_password` (marca como sensible)
 5. Ejecuta el plan desde HCP Terraform
 
@@ -80,8 +86,9 @@ Una vez completado el despliegue:
 | `aws_region` | Región de AWS | string | `us-east-1` |
 | `project_name` | Nombre del proyecto para etiquetas | string | `wordpress-demo` |
 | `vpc_id` | ID de la VPC existente | string | - |
-| `public_subnet_id` | ID de la subnet pública existente | string | - |
+| `public_subnet_id` | ID de la subnet pública existente (para EC2) | string | - |
 | `private_subnet_ids` | Lista de IDs de subnets privadas (mínimo 2) | list(string) | - |
+| `public_subnet_ids` | Lista de IDs de subnets públicas para RDS (mínimo 2) | list(string) | - |
 | `instance_type` | Tipo de instancia EC2 | string | `t3.micro` |
 | `db_instance_class` | Clase de instancia RDS | string | `db.t3.micro` |
 | `db_password` | Contraseña de la base de datos | string | - |
@@ -91,9 +98,24 @@ Una vez completado el despliegue:
 - `wordpress_url`: URL para acceder a WordPress
 - `wordpress_public_ip`: IP pública del servidor
 - `database_endpoint`: Endpoint de la base de datos (sensible)
+- `database_public_endpoint`: Endpoint público de la base de datos
 - `database_name`: Nombre de la base de datos
 - `security_group_web_id`: ID del security group web
 - `security_group_rds_id`: ID del security group RDS
+- `iam_role_arn`: ARN del rol IAM para SSM
+- `instance_profile_name`: Nombre del instance profile
+
+## Características adicionales
+
+### 🔒 SSM Agent
+- La instancia EC2 incluye configuración de IAM para AWS Systems Manager
+- Permite acceso seguro sin necesidad de claves SSH
+- Útil para administración y troubleshooting
+
+### 🌐 RDS Público
+- La base de datos RDS es accesible desde Internet
+- Permite conexión con herramientas externas de base de datos
+- **Importante**: Configurar acceso desde IPs específicas en producción
 
 ## Costos estimados
 

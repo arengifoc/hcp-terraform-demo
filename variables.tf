@@ -116,3 +116,20 @@ variable "private_subnet_ids" {
     error_message = "All subnet IDs must be valid subnet identifiers starting with 'subnet-'."
   }
 }
+
+variable "public_subnet_ids" {
+  description = "List of existing public subnet IDs for RDS when publicly accessible (minimum 2 subnets in different AZs)"
+  type        = list(string)
+  
+  validation {
+    condition = length(var.public_subnet_ids) >= 2
+    error_message = "At least 2 public subnet IDs are required for publicly accessible RDS."
+  }
+  
+  validation {
+    condition = alltrue([
+      for subnet_id in var.public_subnet_ids : can(regex("^subnet-[a-z0-9]+$", subnet_id))
+    ])
+    error_message = "All subnet IDs must be valid subnet identifiers starting with 'subnet-'."
+  }
+}
