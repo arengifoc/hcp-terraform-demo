@@ -1,12 +1,13 @@
-# WordPress Demo on AWS with HCP Terraform
+# HTML Website Demo on AWS with HCP Terraform
 
-Este módulo de Terraform despliega una infraestructura básica en AWS para ejecutar WordPress, utilizando recursos de red existentes.
+Este módulo de Terraform despliega una infraestructura básica en AWS para ejecutar un sitio web HTML estático, utilizando recursos de red existentes.
 
 ## Recursos creados
 
-- **Instancia EC2** (Amazon Linux 2) con WordPress preinstalado
-- **Base de datos RDS MySQL** para WordPress
-- **Security Groups** configurados apropiadamente
+- **Instancia EC2** (Amazon Linux 2) con Apache HTTP Server
+- **Security Group** para acceso HTTP/HTTPS/SSH
+- **IAM Role** para AWS Systems Manager
+- **Sitio web HTML** con diseño moderno y responsive
 
 ## Prerrequisitos
 
@@ -14,9 +15,9 @@ Este módulo de Terraform despliega una infraestructura básica en AWS para ejec
 2. Terraform >= 1.0 instalado
 3. **VPC existente** con:
    - Al menos una subnet pública (para EC2)
-   - Al menos dos subnets privadas en diferentes AZs (para RDS)
    - Internet Gateway configurado en la subnet pública
-4. Cuenta de HCP Terraform (opcional, pero recomendado)
+4. **AWS Key Pair** existente para acceso SSH
+5. Cuenta de HCP Terraform (opcional, pero recomendado)
 
 ## Uso
 
@@ -26,20 +27,13 @@ Este módulo de Terraform despliega una infraestructura básica en AWS para ejec
 2. Edita el archivo `terraform.tfvars` con tus valores reales:
    ```hcl
    aws_region = "us-east-1"
-   project_name = "mi-wordpress-demo"
+   project_name = "mi-sitio-web"
    
    # IDs de tus recursos de red existentes
    vpc_id = "vpc-tu-vpc-real"
    public_subnet_id = "subnet-tu-subnet-publica"
    
-   # Public subnets for RDS (to make it accessible from Internet)
-   public_subnet_ids = [
-     "subnet-tu-subnet-publica-1",
-     "subnet-tu-subnet-publica-2"
-   ]
-   
    key_pair_name = "tu-keypair"
-   db_password = "tu-password-seguro"
    ```
 3. Ejecuta Terraform:
    ```bash
@@ -60,66 +54,72 @@ Este módulo de Terraform despliega una infraestructura básica en AWS para ejec
    - `project_name` 
    - `vpc_id`
    - `public_subnet_id`
-   - `private_subnet_ids`
-   - `public_subnet_ids`
-   - `db_password` (marca como sensible)
+   - `key_pair_name`
 5. Ejecuta el plan desde HCP Terraform
 
-## Acceso a WordPress
+## Acceso al sitio web
 
 Una vez completado el despliegue:
 
-1. Espera 5-10 minutos para que WordPress se configure completamente
+1. Espera 2-3 minutos para que el sitio web se configure completamente
 2. Accede a la URL mostrada en los outputs
-3. Completa la configuración inicial de WordPress
+3. ¡Disfruta de tu sitio web HTML moderno!
 
 ## Variables
 
 | Variable | Descripción | Tipo | Valor por defecto |
 |----------|-------------|------|-------------------|
 | `aws_region` | Región de AWS | string | `us-east-1` |
-| `project_name` | Nombre del proyecto para etiquetas | string | `wordpress-demo` |
+| `project_name` | Nombre del proyecto para etiquetas | string | `html-demo` |
 | `vpc_id` | ID de la VPC existente | string | - |
 | `public_subnet_id` | ID de la subnet pública existente (para EC2) | string | - |
-| `private_subnet_ids` | Lista de IDs de subnets privadas (mínimo 2) | list(string) | - |
-| `public_subnet_ids` | Lista de IDs de subnets públicas para RDS (mínimo 2) | list(string) | - |
 | `instance_type` | Tipo de instancia EC2 | string | `t3.micro` |
 | `key_pair_name` | Nombre del key pair para acceso SSH | string | `kp-arengifo` |
-| `db_instance_class` | Clase de instancia RDS | string | `db.t3.micro` |
-| `db_password` | Contraseña de la base de datos | string | - |
+| `allowed_cidr_blocks` | CIDR blocks permitidos para acceso web | list(string) | `["0.0.0.0/0"]` |
 
 ## Outputs
 
-- `wordpress_url`: URL para acceder a WordPress
-- `wordpress_public_ip`: IP pública del servidor
-- `database_endpoint`: Endpoint de la base de datos (sensible)
-- `database_public_endpoint`: Endpoint público de la base de datos
-- `database_name`: Nombre de la base de datos
+- `website_url`: URL para acceder al sitio web
+- `website_about_url`: URL para acceder a la página "acerca de"
+- `website_public_ip`: IP pública del servidor web
+- `website_public_dns`: DNS público del servidor web
 - `security_group_web_id`: ID del security group web
-- `security_group_rds_id`: ID del security group RDS
 - `iam_role_arn`: ARN del rol IAM para SSM
 - `instance_profile_name`: Nombre del instance profile
+- `key_pair_name`: Nombre del keypair usado
 
-## Características adicionales
+## Características del sitio web
 
-### 🔒 SSM Agent
-- La instancia EC2 incluye configuración de IAM para AWS Systems Manager
-- Permite acceso seguro sin necesidad de claves SSH
-- Útil para administración y troubleshooting
+### 🎨 **Diseño moderno**
+- HTML5 semántico y responsive
+- CSS3 con gradientes y efectos glassmorphism
+- Diseño adaptable a dispositivos móviles y desktop
 
-### 🌐 RDS Público
-- La base de datos RDS es accesible desde Internet
-- Permite conexión con herramientas externas de base de datos
-- **Importante**: Configurar acceso desde IPs específicas en producción
+### 🖥️ **Funcionalidades**
+- Página principal con información del proyecto
+- Página "acerca de" con detalles técnicos
+- Navegación entre páginas
+- Información sobre tecnologías utilizadas
+
+### 🔒 **Seguridad**
+- **SSH restringido**: Acceso SSH solo desde IP específica (38.253.158.165)
+- **SSM Agent**: Configuración de IAM para AWS Systems Manager
+- **Acceso alternativo**: Permite administración segura sin SSH directo
+- **Security Groups**: Configurados con principio de menor privilegio
+
+### 🚀 **Despliegue automático**
+- Configuración completa mediante User Data
+- Apache HTTP Server preconfigurado
+- Contenido HTML generado automáticamente
 
 ## Costos estimados
 
 Para recursos en `us-east-1` con configuración por defecto:
 - EC2 t3.micro: ~$8.50/mes
-- RDS db.t3.micro: ~$15/mes
-- Almacenamiento y transferencia: ~$2-5/mes
+- Almacenamiento EBS (20GB): ~$2/mes
+- Transferencia de datos: ~$1-2/mes
 
-**Total estimado: $25-30/mes**
+**Total estimado: $10-12/mes**
 
 ## Limpieza
 
@@ -131,23 +131,28 @@ terraform destroy
 
 ## Seguridad
 
-⚠️ **Importante**: Esta configuración permite acceso amplio para demostraciones. Para producción, considera:
+✅ **Configuración de seguridad implementada:**
+
+- **SSH restringido**: Solo accesible desde la IP 38.253.158.165
+- **HTTP/HTTPS**: Accesible desde cualquier IP (para sitio web público)
+- **IAM Role**: Configurado para acceso seguro via SSM
+
+⚠️ **Para producción, considera también:**
 
 - Usar HTTPS con certificados SSL
-- Restringir acceso SSH a IPs específicas (actualmente permite acceso desde cualquier IP)
-- Restringir acceso a RDS a IPs específicas (actualmente permite acceso desde cualquier IP)
-- Usar sistemas de gestión de secretos para contraseñas
+- Usar sistemas de gestión de secretos para credenciales
 - Implementar copias de seguridad regulares
 - Configurar monitoring y alertas
 
 ## Solución de problemas
 
-### WordPress no se carga
+### El sitio web no se carga
 - Verifica que la instancia EC2 esté running
-- Espera 10-15 minutos para la configuración inicial
+- Espera 3-5 minutos para la configuración inicial
 - Revisa los logs del sistema en la consola EC2
+- Verifica que el Security Group permita tráfico HTTP (puerto 80)
 
-### Error de conexión a la base de datos
-- Verifica que RDS esté disponible
-- Confirma la configuración de security groups
-- Revisa la conectividad de red entre subnets
+### Error de conexión
+- Confirma la configuración del security group
+- Verifica la conectividad de red de la subnet pública
+- Asegúrate de que la subnet tenga un Internet Gateway configurado

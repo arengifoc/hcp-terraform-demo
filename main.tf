@@ -1,5 +1,5 @@
-# Demo HCP Terraform - WordPress on AWS
-# This configuration creates a simple WordPress setup with EC2 and RDS
+# Demo HCP Terraform - Basic HTML Website on AWS
+# This configuration creates a simple static website with EC2
 # Version constraints are defined in versions.tf
 
 # Configure the AWS Provider
@@ -82,13 +82,13 @@ resource "aws_security_group" "web" {
     cidr_blocks = var.allowed_cidr_blocks
   }
 
-  # SSH access from any IP
+  # SSH access from specific IP only
   ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-    description = "SSH access from any IP"
+    cidr_blocks = ["38.253.158.165/32"]
+    description = "SSH access from specific IP"
   }
 
   # Outbound internet access
@@ -104,133 +104,216 @@ resource "aws_security_group" "web" {
   }
 }
 
-# Security Group for RDS
-resource "aws_security_group" "rds" {
-  name_prefix = "${var.project_name}-rds-"
-  vpc_id      = var.vpc_id
-
-  # MySQL access from web server
-  ingress {
-    from_port       = 3306
-    to_port         = 3306
-    protocol        = "tcp"
-    security_groups = [aws_security_group.web.id]
-  }
-
-  # MySQL access from Internet (for external tools)
-  ingress {
-    from_port   = 3306
-    to_port     = 3306
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-    description = "MySQL access from Internet"
-  }
-
-  tags = {
-    Name = "${var.project_name}-rds-sg"
-  }
-}
-
-# RDS Subnet Group
-resource "aws_db_subnet_group" "main" {
-  name       = "${var.project_name}-db-subnet-group"
-  subnet_ids = var.public_subnet_ids
-
-  tags = {
-    Name = "${var.project_name}-db-subnet-group"
-  }
-}
-
-# RDS Instance
-resource "aws_db_instance" "wordpress" {
-  identifier     = "${var.project_name}-db"
-  engine         = "mysql"
-  engine_version = "8.0"
-  instance_class = var.db_instance_class
-  
-  allocated_storage     = 20
-  max_allocated_storage = 100
-  storage_type          = "gp2"
-  storage_encrypted     = true
-
-  db_name  = "wordpress"
-  username = "admin"
-  password = var.db_password
-
-  vpc_security_group_ids = [aws_security_group.rds.id]
-  db_subnet_group_name   = aws_db_subnet_group.main.name
-  
-  # Make RDS publicly accessible
-  publicly_accessible = true
-
-  backup_retention_period = var.enable_backup ? var.backup_retention_period : 0
-  backup_window          = "03:00-04:00"
-  maintenance_window     = "sun:04:00-sun:05:00"
-
-  skip_final_snapshot = true
-  deletion_protection = false
-
-  tags = {
-    Name = "${var.project_name}-database"
-  }
-}
-
-# User Data Script for WordPress Installation
+# User Data Script for Basic HTML Website
 locals {
   user_data = base64encode(<<-EOF
 #!/bin/bash
 yum update -y
-yum install -y httpd mysql php php-mysqlnd
+yum install -y httpd
 
 # Start and enable Apache
 systemctl start httpd
 systemctl enable httpd
 
-# Download and configure WordPress
+# Create a basic HTML website
 cd /var/www/html
-wget https://wordpress.org/latest.tar.gz
-tar -xzf latest.tar.gz
-cp -r wordpress/* .
-rm -rf wordpress latest.tar.gz
+
+# Create index.html with a basic website
+cat <<'HTML' > index.html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo HCP Terraform</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            text-align: center;
+            max-width: 800px;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+        }
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+        .info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin: 1rem 0;
+        }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        .feature {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: 10px;
+        }
+        .footer {
+            margin-top: 2rem;
+            opacity: 0.7;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Demo HCP Terraform</h1>
+        <h2>Sitio Web Desplegado con Terraform</h2>
+        
+        <div class="info">
+            <h3>✅ Despliegue Exitoso</h3>
+            <p>Esta página web ha sido desplegada automáticamente usando HashiCorp Terraform y HCP Terraform.</p>
+        </div>
+
+        <div class="features">
+            <div class="feature">
+                <h4>🔧 Infraestructura como Código</h4>
+                <p>EC2 + Apache HTTP Server</p>
+            </div>
+            <div class="feature">
+                <h4>☁️ AWS Cloud</h4>
+                <p>Desplegado en Amazon Web Services</p>
+            </div>
+            <div class="feature">
+                <h4>🔒 Seguridad</h4>
+                <p>Security Groups + IAM + SSM</p>
+            </div>
+            <div class="feature">
+                <h4>📦 Automatización</h4>
+                <p>User Data Script</p>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Powered by HashiCorp Terraform • Desplegado en $(date)</p>
+        </div>
+    </div>
+</body>
+</html>
+HTML
+
+# Create an about page
+cat <<'HTML' > about.html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acerca de - Demo HCP Terraform</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            text-align: center;
+            max-width: 800px;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+        }
+        .nav {
+            margin-bottom: 2rem;
+        }
+        .nav a {
+            color: white;
+            text-decoration: none;
+            margin: 0 1rem;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+        }
+        .nav a:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav">
+            <a href="index.html">🏠 Inicio</a>
+            <a href="about.html">📋 Acerca de</a>
+        </div>
+        
+        <h1>📋 Acerca de este sitio</h1>
+        
+        <div style="text-align: left; max-width: 600px;">
+            <h3>🛠️ Tecnologías utilizadas:</h3>
+            <ul>
+                <li><strong>HashiCorp Terraform</strong> - Infraestructura como código</li>
+                <li><strong>HCP Terraform</strong> - Gestión de estado remoto</li>
+                <li><strong>Amazon EC2</strong> - Instancia de servidor web</li>
+                <li><strong>Apache HTTP Server</strong> - Servidor web</li>
+                <li><strong>HTML5 + CSS3</strong> - Frontend</li>
+            </ul>
+
+            <h3>🏗️ Arquitectura:</h3>
+            <ul>
+                <li>VPC existente reutilizada</li>
+                <li>Subnet pública para el servidor web</li>
+                <li>Security Group con acceso HTTP/HTTPS/SSH</li>
+                <li>IAM Role para AWS Systems Manager</li>
+                <li>User Data para configuración automática</li>
+            </ul>
+        </div>
+        
+        <div style="margin-top: 2rem;">
+            <a href="index.html" style="color: white; text-decoration: none; padding: 1rem 2rem; background: rgba(255, 255, 255, 0.2); border-radius: 10px;">← Volver al inicio</a>
+        </div>
+    </div>
+</body>
+</html>
+HTML
 
 # Set permissions
 chown -R apache:apache /var/www/html
 chmod -R 755 /var/www/html
 
-# Create WordPress configuration
-cp wp-config-sample.php wp-config.php
-
-# Update wp-config.php with database details
-sed -i "s/database_name_here/wordpress/g" wp-config.php
-sed -i "s/username_here/admin/g" wp-config.php
-sed -i "s/password_here/${var.db_password}/g" wp-config.php
-sed -i "s/localhost/${aws_db_instance.wordpress.endpoint}/g" wp-config.php
-
-# Generate WordPress salts
-SALT_URL="https://api.wordpress.org/secret-key/1.1/salt/"
-SALTS=$(curl -s $SALT_URL)
-printf '%s\n' "$SALTS" > /tmp/wp-salts.txt
-
-# Replace the salt section in wp-config.php
-sed -i '/AUTH_KEY/,$d' wp-config.php
-cat /tmp/wp-salts.txt >> wp-config.php
-echo "\$table_prefix = 'wp_';" >> wp-config.php
-echo "if ( ! defined( 'ABSPATH' ) ) {" >> wp-config.php
-echo "    define( 'ABSPATH', __DIR__ . '/' );" >> wp-config.php
-echo "}" >> wp-config.php
-echo "require_once ABSPATH . 'wp-settings.php';" >> wp-config.php
-
 # Restart Apache
 systemctl restart httpd
-
-# Create a simple index page while WordPress loads
-echo "<h1>WordPress is being configured...</h1><p>Please wait a few minutes for the installation to complete.</p>" > /var/www/html/index.html
 EOF
   )
 }
 
 # EC2 Instance
-resource "aws_instance" "wordpress" {
+resource "aws_instance" "web" {
   ami                    = data.aws_ami.amazon_linux.id
   instance_type         = var.instance_type
   subnet_id             = var.public_subnet_id
@@ -249,8 +332,6 @@ resource "aws_instance" "wordpress" {
   tags = {
     Name = "${var.project_name}-web-server"
   }
-
-  depends_on = [aws_db_instance.wordpress]
 }
 
 # Outputs are defined in outputs.tf
