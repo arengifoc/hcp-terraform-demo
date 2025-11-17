@@ -5,6 +5,12 @@
 # Configure the AWS Provider
 provider "aws" {
   region = var.aws_region
+
+  default_tags {
+    tags = {
+      Owner = var.owner
+    }
+  }
 }
 
 # Variables are defined in variables.tf
@@ -42,7 +48,8 @@ resource "aws_iam_role" "ec2_ssm_role" {
   })
 
   tags = {
-    Name = "${var.project_name}-ec2-ssm-role"
+    Name  = "${var.project_name}-ec2-ssm-role"
+    Owner = var.owner
   }
 }
 
@@ -58,7 +65,8 @@ resource "aws_iam_instance_profile" "ec2_profile" {
   role = aws_iam_role.ec2_ssm_role.name
 
   tags = {
-    Name = "${var.project_name}-ec2-profile"
+    Name  = "${var.project_name}-ec2-profile"
+    Owner = var.owner
   }
 }
 
@@ -100,7 +108,8 @@ resource "aws_security_group" "web" {
   }
 
   tags = {
-    Name = "${var.project_name}-web-sg"
+    Name  = "${var.project_name}-web-sg"
+    Owner = var.owner
   }
 }
 
@@ -315,8 +324,8 @@ EOF
 # EC2 Instance
 resource "aws_instance" "web" {
   ami                    = data.aws_ami.amazon_linux.id
-  instance_type         = var.instance_type
-  subnet_id             = var.public_subnet_id
+  instance_type          = var.instance_type
+  subnet_id              = var.public_subnet_id
   vpc_security_group_ids = [aws_security_group.web.id]
   iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
   key_name               = var.key_pair_name
@@ -330,7 +339,8 @@ resource "aws_instance" "web" {
   }
 
   tags = {
-    Name = "${var.project_name}-web-server"
+    Name  = "${var.project_name}-web-server"
+    Owner = var.owner
   }
 }
 
